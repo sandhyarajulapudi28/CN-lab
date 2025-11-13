@@ -1,0 +1,52 @@
+/*checksum
+#include <stdio.h>
+#include <string.h>
+
+unsigned char checksum(const char *d) {
+    unsigned int s = 0;
+    for (int i = 0; d[i]; i++) s += (unsigned char)d[i];
+    return s % 256;
+}
+
+void send(const char *d, unsigned char *f, int *n) {
+    int len = strlen(d);
+    f[0] = 0x7E; // SOF
+    memcpy(f + 1, d, len);
+    f[1 + len] = checksum(d);
+    f[2 + len] = 0x7F; // EOF
+    *n = len + 3;
+}
+
+int receive(const unsigned char *f, int n, char *out) {
+    if (f[0] != 0x7E || f[n - 1] != 0x7F) return printf("Frame error!\n"), 0;
+    int len = n - 3;
+    memcpy(out, f + 1, len);
+    out[len] = '\0';
+    if (f[1 + len] != checksum(out)) return printf("Checksum error!\n"), 0;
+    return 1;
+}
+
+int main() {
+    char data[100], recv[100];
+    unsigned char frame[110];
+    int len;
+
+    printf("Enter data to send: ");
+    scanf("%s", data);
+
+    send(data, frame, &len);
+    printf("Transmitted Frame (in hex): ");
+    for (int i = 0; i < len; i++) printf("%02X ", frame[i]);
+    printf("\n");
+
+    if (receive(frame, len, recv))
+        printf("Received data: %s\nNo error detected in frame.\n", recv);
+}
+
+
+
+Output:
+Enter data to send: HELLO
+Transmitted Frame (in hex): 7E 48 45 4C 4C 4F 74 7F 
+Received data: HELLO
+No error detected in frame.
